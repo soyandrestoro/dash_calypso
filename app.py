@@ -595,14 +595,35 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
     FACTOR_COMERCIAL = 1.40
     N_MESES          = 7
 
-    # Una fila por sede dentro del filtrado activo
-    eq_filtrado    = filtrado.groupby('cuenta').agg(
+    st.markdown("---")
+    col_tit, col_filt = st.columns([2, 3])
+    with col_tit:
+        st.markdown("### Detalle de Datos")
+    with col_filt:
+        cuentas_tabla_opts = sorted(filtrado['cuenta'].astype(str).unique().tolist())
+        cuentas_tabla_sel  = st.multiselect(
+            "cuenta_detalle",
+            options=cuentas_tabla_opts,
+            default=[],
+            placeholder="Filtrar por cuenta — global si no seleccionas",
+            key="detalle_cuentas_widget",
+            label_visibility="collapsed",
+        )
+
+    # Base de datos activa: filtros principales + filtro de cuenta
+    base_filtrado = (
+        filtrado if not cuentas_tabla_sel
+        else filtrado[filtrado['cuenta'].astype(str).isin(cuentas_tabla_sel)]
+    )
+
+    # Financiamiento calculado sobre base_filtrado (responde a ambos filtros)
+    eq_base       = base_filtrado.groupby('cuenta').agg(
         costo_equipos   =('costo_equipos',   'first'),
         renting_mensual =('renting_mensual', 'first'),
     )
-    valor_eq_real  = eq_filtrado['costo_equipos'].sum()
+    valor_eq_real  = eq_base['costo_equipos'].sum()
     valor_eq_com   = valor_eq_real * FACTOR_COMERCIAL
-    rent_real_men  = eq_filtrado['renting_mensual'].sum()
+    rent_real_men  = eq_base['renting_mensual'].sum()
     rent_ref_men   = rent_real_men * FACTOR_COMERCIAL
     bia_men        = rent_ref_men - rent_real_men
 
@@ -612,18 +633,6 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     por_pagar_real = valor_eq_real - pagado_real
     por_pagar_ref  = valor_eq_com  - pagado_ref
-
-    st.markdown("---")
-    st.markdown("### Detalle de Datos")
-    cuentas_tabla_opts = sorted(filtrado['cuenta'].astype(str).unique().tolist())
-    st.multiselect(
-        "Filtrar tabla por cuenta",
-        options=cuentas_tabla_opts,
-        default=[],
-        placeholder="Todas las cuentas — selecciona para filtrar",
-        key="detalle_cuentas_widget",
-    )
-    cuentas_tabla_sel = st.session_state.get("detalle_cuentas_widget", [])
 
     # ── Banner BIA ──────────────────────────────────────────────────────────
     st.markdown(f"""
@@ -680,12 +689,7 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     st.markdown("")
 
-    base_tabla = (
-        filtrado if not cuentas_tabla_sel
-        else filtrado[filtrado['cuenta'].astype(str).isin(cuentas_tabla_sel)]
-    )
-
-    tabla = base_tabla[[
+    tabla = base_filtrado[[
         'cuenta', 'direccion', 'nivel', 'mes', 'consumo',
         'tarifa_epm', 'tarifa_bia', 'ahorro_bruto',
         'costo_equipos', 'renting_mensual',
