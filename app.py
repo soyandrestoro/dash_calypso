@@ -155,7 +155,7 @@ if 'ultimo_nivel' not in st.session_state:
     st.session_state.ultimo_nivel = ""
 
 def reiniciar_filtros():
-    for key in ('busqueda_widget', 'nivel_widget', 'sede_widget', 'mes_widget', 'heatmap_sedes_widget'):
+    for key in ('busqueda_widget', 'nivel_widget', 'sede_widget', 'mes_widget', 'heatmap_sedes_widget', 'detalle_cuentas_widget'):
         if key in st.session_state:
             del st.session_state[key]
     st.session_state.ultimo_nivel = ""
@@ -592,22 +592,26 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     # ── Tabla detallada ───────────────────────────────────────────────────────
 
-    FACTOR_COMERCIAL   = 1.40
-    VALOR_EQUIPOS_REAL = 55_466_378
-    VALOR_COMERCIAL_T  = VALOR_EQUIPOS_REAL * FACTOR_COMERCIAL
-    N_MESES            = 7
+    FACTOR_COMERCIAL = 1.40
+    N_MESES          = 7
 
-    # Renting mensual total — una fila por sede, dataset completo
-    rent_real_men = df.groupby('cuenta')['renting_mensual'].first().sum()
-    rent_ref_men  = rent_real_men * FACTOR_COMERCIAL
-    bia_men       = rent_ref_men - rent_real_men
+    # Una fila por sede dentro del filtrado activo
+    eq_filtrado    = filtrado.groupby('cuenta').agg(
+        costo_equipos   =('costo_equipos',   'first'),
+        renting_mensual =('renting_mensual', 'first'),
+    )
+    valor_eq_real  = eq_filtrado['costo_equipos'].sum()
+    valor_eq_com   = valor_eq_real * FACTOR_COMERCIAL
+    rent_real_men  = eq_filtrado['renting_mensual'].sum()
+    rent_ref_men   = rent_real_men * FACTOR_COMERCIAL
+    bia_men        = rent_ref_men - rent_real_men
 
-    pagado_real   = rent_real_men * N_MESES
-    pagado_ref    = rent_ref_men  * N_MESES
-    bia_aportado  = bia_men       * N_MESES
+    pagado_real    = rent_real_men * N_MESES
+    pagado_ref     = rent_ref_men  * N_MESES
+    bia_aportado   = bia_men       * N_MESES
 
-    por_pagar_real = VALOR_EQUIPOS_REAL - pagado_real
-    por_pagar_ref  = VALOR_COMERCIAL_T  - pagado_ref
+    por_pagar_real = valor_eq_real - pagado_real
+    por_pagar_ref  = valor_eq_com  - pagado_ref
 
     st.markdown("---")
     st.markdown("### Detalle de Datos")
@@ -646,21 +650,21 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     with col_sin:
         _header("Valor total equipos", "#8C9BB0")
-        st.metric("Valor equipos",             f"${VALOR_COMERCIAL_T:,.0f}")
+        st.metric("Valor equipos",             f"${valor_eq_com:,.0f}")
         st.metric("Renting mensual",           f"${rent_ref_men:,.0f}")
         st.metric(f"Pagado ({N_MESES} meses)", f"${pagado_ref:,.0f}")
         st.metric("Por pagar",                 f"${por_pagar_ref:,.0f}")
 
     with col_con:
         _header("Con BIA", "#09B4CC")
-        st.metric("Valor equipos",             f"${VALOR_EQUIPOS_REAL:,.0f}")
+        st.metric("Valor equipos",             f"${valor_eq_real:,.0f}")
         st.metric("Renting mensual",           f"${rent_real_men:,.0f}")
         st.metric(f"Pagado ({N_MESES} meses)", f"${pagado_real:,.0f}")
         st.metric("Por pagar",                 f"${por_pagar_real:,.0f}")
 
     with col_ahorro:
         _header("El cliente ahorra", "#2ECC71")
-        _ahorro_card("En valor de equipos",     VALOR_COMERCIAL_T - VALOR_EQUIPOS_REAL)
+        _ahorro_card("En valor de equipos",     valor_eq_com - valor_eq_real)
         _ahorro_card("En renting mensual",      bia_men)
         _ahorro_card(f"En {N_MESES} meses",     bia_aportado)
         _ahorro_card("En saldo por pagar",      por_pagar_ref - por_pagar_real)
@@ -668,10 +672,24 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
     st.markdown("")
     st.caption(
         f"Valor total equipos: valor de mercado de los equipos y su renting asociado. "
-        f"Con BIA: el cliente paga ${VALOR_EQUIPOS_REAL:,.0f} en equipos y un renting mensual menor — BIA financia la diferencia."
+        f"Con BIA: el cliente paga ${valor_eq_real:,.0f} en equipos y un renting mensual menor — BIA financia la diferencia."
     )
 
-    tabla = filtrado[[
+    # ── Filtro de cuentas para la tabla ────────────────────────────────────
+    cuentas_tabla_opts = sorted(filtrado['cuenta'].astype(str).unique().tolist())
+    cuentas_tabla_sel  = st.multiselect(
+        "Filtrar tabla por cuenta",
+        options=cuentas_tabla_opts,
+        default=[],
+        placeholder="Todas las cuentas — selecciona para filtrar",
+        key="detalle_cuentas_widget",
+    )
+    base_tabla = (
+        filtrado if not cuentas_tabla_sel
+        else filtrado[filtrado['cuenta'].astype(str).isin(cuentas_tabla_sel)]
+    )
+
+    tabla = base_tabla[[
         'cuenta', 'direccion', 'nivel', 'mes', 'consumo',
         'tarifa_epm', 'tarifa_bia', 'ahorro_bruto',
         'costo_equipos', 'renting_mensual',
