@@ -592,18 +592,37 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     # ── Tabla detallada ───────────────────────────────────────────────────────
 
+    INFLACION = 1.40   # BIA infla el costo de equipos un 40%
+
     st.markdown("---")
     st.markdown("### Detalle de Datos")
+    st.caption(
+        "💡 **Valor inflado** = costo de equipos × 1.40 — valor que BIA presenta al cliente como base del renting. "
+        "**BIA cubre** = diferencia entre el renting inflado y el renting real, refleja el aporte de BIA al financiamiento del equipo."
+    )
 
     tabla = filtrado[[
         'cuenta', 'direccion', 'nivel', 'mes', 'consumo',
-        'ahorro_bruto', 'renting_mensual', 'ahorro_neto', 'costo_equipos'
+        'tarifa_epm', 'tarifa_bia', 'ahorro_bruto',
+        'costo_equipos', 'renting_mensual',
     ]].copy()
-    tabla.columns = ['Cuenta', 'Dirección', 'Nivel', 'Mes', 'Consumo (kWh)',
-                     'Ahorro ($)', 'Renting ($)', 'Diferencia ($)', 'Equipos ($)']
 
-    tabla['Consumo (kWh)'] = tabla['Consumo (kWh)'].apply(lambda x: f"{x:,.0f}")
-    for col in ['Ahorro ($)', 'Renting ($)', 'Diferencia ($)', 'Equipos ($)']:
+    tabla['valor_inflado']   = tabla['costo_equipos'] * INFLACION
+    tabla['renting_inflado'] = tabla['renting_mensual'] * INFLACION
+    tabla['bia_cubre']       = tabla['renting_inflado'] - tabla['renting_mensual']
+
+    tabla.columns = [
+        'Cuenta', 'Dirección', 'Nivel', 'Mes', 'Consumo (kWh)',
+        'Tarifa EPM ($/kWh)', 'Tarifa BIA ($/kWh)', 'Ahorro en tarifa ($)',
+        'Valor Equipos ($)', 'Renting Normal ($)',
+        'Valor Inflado 40% ($)', 'Renting Inflado ($)', 'BIA Cubre ($)',
+    ]
+
+    tabla['Consumo (kWh)']       = tabla['Consumo (kWh)'].apply(lambda x: f"{x:,.0f}")
+    tabla['Tarifa EPM ($/kWh)']  = tabla['Tarifa EPM ($/kWh)'].apply(lambda x: f"${x:.4f}")
+    tabla['Tarifa BIA ($/kWh)']  = tabla['Tarifa BIA ($/kWh)'].apply(lambda x: f"${x:.4f}")
+    for col in ['Ahorro en tarifa ($)', 'Valor Equipos ($)', 'Renting Normal ($)',
+                'Valor Inflado 40% ($)', 'Renting Inflado ($)', 'BIA Cubre ($)']:
         tabla[col] = tabla[col].apply(lambda x: f"${x:,.0f}")
 
     st.dataframe(tabla, use_container_width=True, hide_index=True)
