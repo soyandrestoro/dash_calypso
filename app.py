@@ -434,7 +434,7 @@ if len(filtrado) > 0:
                 z=pivot.values,
                 x=list(pivot.columns),
                 y=[str(c) for c in pivot.index],
-                colorscale=[[0.0, '#FFB627'], [0.5, '#1A2035'], [1.0, '#2ECC71']],
+                colorscale=[[0.0, '#7555F3'], [0.5, '#101525'], [1.0, '#2ECC71']],
                 zmid=0,
                 hoverongaps=False,
                 hovertemplate='<b>Cuenta %{y}</b><br>Mes: %{x}<br>Ahorro neto: $%{z:,.0f}<extra></extra>',
