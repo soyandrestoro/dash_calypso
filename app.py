@@ -682,10 +682,6 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
         _ahorro_card("En saldo por pagar",      por_pagar_ref - por_pagar_real)
 
     st.markdown("")
-    st.caption(
-        f"Valor total equipos: valor de mercado de los equipos y su renting asociado. "
-        f"Con BIA: el cliente paga ${valor_eq_real:,.0f} en equipos y un renting mensual menor — BIA financia la diferencia."
-    )
 
     base_tabla = (
         filtrado if not cuentas_tabla_sel
@@ -705,23 +701,22 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
     tabla.columns = [
         'Cuenta', 'Dirección', 'Nivel', 'Mes', 'Consumo (kWh)',
         'Tarifa EPM ($/kWh)', 'Tarifa BIA ($/kWh)', 'Ahorro en Tarifa ($)',
-        'Valor Equipos ($)', 'Renting Cliente ($)',
-        'Valor Comercial ($)', 'Renting de Referencia ($)', 'BIA Financia ($)',
+        'Valor Total Equipos ($)', 'Renting Mensual ($)',
+        'Valor Con BIA ($)', 'Renting Con BIA ($)', 'El Cliente Ahorra ($)',
     ]
 
-    # Escenario comercial primero, luego lo que paga el cliente
     tabla = tabla[[
         'Cuenta', 'Dirección', 'Nivel', 'Mes', 'Consumo (kWh)',
         'Tarifa EPM ($/kWh)', 'Tarifa BIA ($/kWh)', 'Ahorro en Tarifa ($)',
-        'Valor Comercial ($)', 'Renting de Referencia ($)',
-        'Valor Equipos ($)', 'Renting Cliente ($)', 'BIA Financia ($)',
+        'Valor Total Equipos ($)', 'Renting Mensual ($)',
+        'Valor Con BIA ($)', 'Renting Con BIA ($)', 'El Cliente Ahorra ($)',
     ]]
 
-    tabla['Consumo (kWh)']       = tabla['Consumo (kWh)'].apply(lambda x: f"{x:,.0f}")
-    tabla['Tarifa EPM ($/kWh)']  = tabla['Tarifa EPM ($/kWh)'].apply(lambda x: f"${x:.4f}")
-    tabla['Tarifa BIA ($/kWh)']  = tabla['Tarifa BIA ($/kWh)'].apply(lambda x: f"${x:.4f}")
-    for col in ['Ahorro en Tarifa ($)', 'Valor Comercial ($)', 'Renting de Referencia ($)',
-                'Valor Equipos ($)', 'Renting Cliente ($)', 'BIA Financia ($)']:
+    tabla['Consumo (kWh)']      = tabla['Consumo (kWh)'].apply(lambda x: f"{x:,.0f}")
+    tabla['Tarifa EPM ($/kWh)'] = tabla['Tarifa EPM ($/kWh)'].apply(lambda x: f"${x:.4f}")
+    tabla['Tarifa BIA ($/kWh)'] = tabla['Tarifa BIA ($/kWh)'].apply(lambda x: f"${x:.4f}")
+    for col in ['Ahorro en Tarifa ($)', 'Valor Total Equipos ($)', 'Renting Mensual ($)',
+                'Valor Con BIA ($)', 'Renting Con BIA ($)', 'El Cliente Ahorra ($)']:
         tabla[col] = tabla[col].apply(lambda x: f"${x:,.0f}")
 
     st.dataframe(tabla, use_container_width=True, hide_index=True)
