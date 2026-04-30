@@ -436,26 +436,47 @@ if len(filtrado) > 0:
         st.plotly_chart(fig_hm, use_container_width=True)
 
     with c2:
-        ranking = por_sede.sort_values('ahorro_neto', ascending=True)
-        col_rank = ['#10b981' if v > 0 else '#94a3b8' for v in ranking['ahorro_neto']]
-        fig_rk = go.Figure(go.Bar(
-            x=ranking['ahorro_neto'],
-            y=ranking['cuenta'].astype(str),
-            orientation='h',
-            marker_color=col_rank,
-            text=[f"${v:,.0f}" for v in ranking['ahorro_neto']],
+        st.markdown("**Ahorro Neto por Sede**")
+        ranking = por_sede.sort_values('ahorro_neto', ascending=False)
+        sede_opts = ranking['cuenta'].astype(str).tolist()
+        sede_sel = st.selectbox(
+            "Selecciona una sede",
+            sede_opts,
+            key="ranking_sede_widget",
+        )
+
+        detalle = filtrado[filtrado['cuenta'].astype(str) == sede_sel].sort_values('mes')
+        ahorro_total = detalle['ahorro_neto'].sum()
+        niv_sede = detalle['nivel'].iloc[0] if len(detalle) > 0 else '—'
+        color_total = '#10b981' if ahorro_total > 0 else '#94a3b8'
+        st.markdown(
+            f"<span style='color:#94a3b8;font-size:0.85em'>{niv_sede}</span> &nbsp; "
+            f"<span style='color:{color_total};font-weight:600'>Total: ${ahorro_total:,.0f}</span>",
+            unsafe_allow_html=True,
+        )
+
+        col_bars = ['#10b981' if v > 0 else '#94a3b8' for v in detalle['ahorro_neto']]
+        fig_sede = go.Figure(go.Bar(
+            x=detalle['mes'],
+            y=detalle['ahorro_neto'],
+            marker_color=col_bars,
+            text=[f"${v:,.0f}" for v in detalle['ahorro_neto']],
             textposition='outside',
             textfont=dict(size=10),
+            hovertemplate='%{x}<br>$%{y:,.0f}<extra></extra>',
         ))
-        fig_rk.update_layout(
-            title='Ranking de Sedes por Ahorro Neto',
-            xaxis_title='Ahorro neto ($)',
-            yaxis_title='',
-            template='plotly_dark',
-            height=max(420, len(ranking) * 22 + 80),
-            margin=dict(l=120),
+        fig_sede.add_hline(y=0, line=dict(color='#475569', dash='dash', width=1))
+        fig_sede.update_layout(
+            xaxis_title='', yaxis_title='$',
+            template='plotly_dark', height=360,
+            showlegend=False,
+            margin=dict(t=30, b=40, l=60, r=20),
+            plot_bgcolor='rgba(0,0,0,0)',
+            paper_bgcolor='rgba(0,0,0,0)',
+            yaxis=dict(showgrid=True, gridcolor='rgba(71,85,105,0.25)', zeroline=False),
+            xaxis=dict(showgrid=False),
         )
-        st.plotly_chart(fig_rk, use_container_width=True)
+        st.plotly_chart(fig_sede, use_container_width=True)
 
     c1, c2 = st.columns(2)
 
