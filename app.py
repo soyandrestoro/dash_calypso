@@ -556,11 +556,11 @@ if len(filtrado) > 0:
             barmode='group', hovermode='x unified',
             template='plotly_dark', height=420,
             plot_bgcolor='rgba(0,0,0,0)', paper_bgcolor='rgba(0,0,0,0)',
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0,
+            legend=dict(orientation='h', yanchor='top', y=-0.15, xanchor='center', x=0.5,
                         bgcolor='rgba(0,0,0,0)', borderwidth=0),
             yaxis=dict(showgrid=True, gridcolor='rgba(140,155,176,0.12)', zeroline=False),
             xaxis=dict(showgrid=False),
-            margin=dict(t=50, b=40, l=60, r=20),
+            margin=dict(t=40, b=60, l=60, r=20),
             uniformtext=dict(mode='hide', minsize=9),
         )
         st.plotly_chart(fig, use_container_width=True)
