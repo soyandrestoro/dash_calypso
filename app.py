@@ -592,52 +592,74 @@ Las barras horizontales muestran visualmente ese porcentaje sobre el 100% del to
 
     # ── Tabla detallada ───────────────────────────────────────────────────────
 
-    FACTOR_COMERCIAL = 1.40
+    FACTOR_COMERCIAL   = 1.40
+    VALOR_EQUIPOS_REAL = 55_466_378
+    VALOR_COMERCIAL_T  = VALOR_EQUIPOS_REAL * FACTOR_COMERCIAL
+    N_MESES            = 7
+
+    # Renting mensual total — una fila por sede, dataset completo
+    rent_real_men = df.groupby('cuenta')['renting_mensual'].first().sum()
+    rent_ref_men  = rent_real_men * FACTOR_COMERCIAL
+    bia_men       = rent_ref_men - rent_real_men
+
+    pagado_real   = rent_real_men * N_MESES
+    pagado_ref    = rent_ref_men  * N_MESES
+    bia_aportado  = bia_men       * N_MESES
+
+    por_pagar_real = VALOR_EQUIPOS_REAL - pagado_real
+    por_pagar_ref  = VALOR_COMERCIAL_T  - pagado_ref
 
     st.markdown("---")
     st.markdown("### Detalle de Datos")
 
-    # Una fila por sede (costo_equipos y renting son fijos, no mensuales)
-    por_sede_eq   = filtrado.groupby('cuenta', as_index=False).agg(
-        costo_equipos=('costo_equipos', 'first'),
-        renting_mensual=('renting_mensual', 'first'),
-    )
-    tot_eq        = por_sede_eq['costo_equipos'].sum()
-    tot_comercial = tot_eq * FACTOR_COMERCIAL
-    tot_rent_cli  = por_sede_eq['renting_mensual'].sum()
-    tot_rent_ref  = tot_rent_cli * FACTOR_COMERCIAL
-    tot_bia_fin   = tot_rent_ref - tot_rent_cli
+    # ── Banner BIA ──────────────────────────────────────────────────────────
+    st.markdown(f"""
+<div style='background:#101525;border-left:4px solid #2ECC71;padding:14px 18px;
+            border-radius:6px;margin-bottom:18px'>
+  <span style='color:#8C9BB0;font-size:0.85em'>Aporte acumulado de BIA en {N_MESES} meses</span><br>
+  <span style='color:#2ECC71;font-size:1.8em;font-weight:700'>${bia_aportado:,.0f}</span>
+  <span style='color:#8C9BB0;font-size:0.9em'> financiados por BIA en equipos</span>
+</div>
+""", unsafe_allow_html=True)
 
-    # ── Cuadro resumen de equipos ──
-    st.markdown("#### Resumen de Equipos y Financiamiento BIA")
-    ra, rb, rc, rd = st.columns(4)
-    ra.metric(
-        "Valor Comercial Total",
-        f"${tot_comercial:,.0f}",
-        help="Valor de referencia total de los equipos presentado al cliente",
-    )
-    rb.metric(
-        "Renting de Referencia",
-        f"${tot_rent_ref:,.0f}",
-        help="Renting mensual total calculado sobre el valor comercial",
-    )
-    rc.metric(
-        "Renting que Paga el Cliente",
-        f"${tot_rent_cli:,.0f}",
-        help="Renting mensual real a cargo del cliente",
-    )
-    rd.metric(
-        "BIA Financia",
-        f"${tot_bia_fin:,.0f}",
-        delta=f"{(tot_bia_fin/tot_rent_ref*100):.1f}% del renting de referencia" if tot_rent_ref else "—",
-        delta_color="normal",
-        help="Aporte mensual de BIA al financiamiento de los equipos del cliente",
-    )
+    # ── Comparativo lado a lado ─────────────────────────────────────────────
+    st.markdown("#### Equipos — Escenario de Referencia vs Con BIA")
+    col_ref, col_bia = st.columns(2)
+
+    with col_ref:
+        st.markdown(
+            "<div style='text-align:center;color:#FFB627;font-weight:600;"
+            "font-size:1em;margin-bottom:8px'>📋 Escenario de Referencia</div>",
+            unsafe_allow_html=True,
+        )
+        st.metric("Valor total equipos",       f"${VALOR_COMERCIAL_T:,.0f}")
+        st.metric("Renting mensual",           f"${rent_ref_men:,.0f}")
+        st.metric(f"Pagado ({N_MESES} meses)", f"${pagado_ref:,.0f}")
+        st.metric("Por pagar",                 f"${por_pagar_ref:,.0f}")
+
+    with col_bia:
+        st.markdown(
+            "<div style='text-align:center;color:#2ECC71;font-weight:600;"
+            "font-size:1em;margin-bottom:8px'>✅ Con BIA</div>",
+            unsafe_allow_html=True,
+        )
+        st.metric("Valor total equipos",       f"${VALOR_EQUIPOS_REAL:,.0f}",
+                  delta=f"-${VALOR_COMERCIAL_T - VALOR_EQUIPOS_REAL:,.0f} vs referencia",
+                  delta_color="normal")
+        st.metric("Renting mensual",           f"${rent_real_men:,.0f}",
+                  delta=f"-${bia_men:,.0f}/mes financia BIA",
+                  delta_color="normal")
+        st.metric(f"Pagado ({N_MESES} meses)", f"${pagado_real:,.0f}",
+                  delta=f"-${bia_aportado:,.0f} aportados por BIA",
+                  delta_color="normal")
+        st.metric("Por pagar",                 f"${por_pagar_real:,.0f}",
+                  delta=f"-${por_pagar_ref - por_pagar_real:,.0f} vs referencia",
+                  delta_color="normal")
 
     st.markdown("")
     st.caption(
-        "💡 **Valor Comercial** = valor de referencia de los equipos presentado al cliente. "
-        "**BIA Financia** = diferencia entre el renting de referencia y lo que el cliente paga efectivamente."
+        "💡 **Escenario de referencia**: valor comercial de los equipos y su renting asociado. "
+        f"**Con BIA**: valor real (${VALOR_EQUIPOS_REAL:,.0f}) y renting que paga efectivamente el cliente — la diferencia la financia BIA."
     )
 
     tabla = filtrado[[
