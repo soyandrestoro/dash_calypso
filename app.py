@@ -384,35 +384,32 @@ if len(filtrado) > 0:
     c1, c2 = st.columns(2)
 
     with c1:
-        fig_sc = go.Figure()
-        for niv in sorted(por_sede['nivel'].unique()):
-            sub = por_sede[por_sede['nivel'] == niv]
-            col_pts = ['#10b981' if v > 0 else '#94a3b8' for v in sub['ahorro_neto']]
-            fig_sc.add_trace(go.Scatter(
-                x=sub['consumo'],
-                y=sub['ahorro_neto'],
-                mode='markers+text',
-                name=niv,
-                marker=dict(size=11, color=col_pts, line=dict(width=1, color='#0f1419')),
-                text=sub['cuenta'].astype(str),
-                textposition='top center',
-                textfont=dict(size=9, color='#94a3b8'),
-                hovertemplate=(
-                    '<b>Cuenta %{text}</b><br>'
-                    'Consumo: %{x:,.0f} kWh<br>'
-                    'Ahorro neto: $%{y:,.0f}<extra></extra>'
-                ),
-            ))
-        fig_sc.add_hline(y=0, line=dict(color='#475569', dash='dash', width=1))
-        fig_sc.update_layout(
-            title='Consumo vs Ahorro Neto por Sede',
-            xaxis_title='Consumo total (kWh)',
-            yaxis_title='Ahorro neto ($)',
-            template='plotly_dark',
-            height=480,
-            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
+        pivot = filtrado.pivot_table(
+            index='cuenta', columns='mes', values='ahorro_neto',
+            aggfunc='sum', fill_value=0,
         )
-        st.plotly_chart(fig_sc, use_container_width=True)
+        cols_ord = [m for m in MESES_KEYS if m in pivot.columns]
+        pivot = pivot[cols_ord]
+        pivot = pivot.loc[pivot.sum(axis=1).sort_values(ascending=True).index]
+
+        fig_hm = go.Figure(go.Heatmap(
+            z=pivot.values,
+            x=list(pivot.columns),
+            y=[str(c) for c in pivot.index],
+            colorscale=[[0.0, '#475569'], [0.5, '#94a3b8'], [1.0, '#10b981']],
+            zmid=0,
+            hoverongaps=False,
+            hovertemplate='<b>Cuenta %{y}</b><br>Mes: %{x}<br>Ahorro neto: $%{z:,.0f}<extra></extra>',
+            colorbar=dict(title='Ahorro ($)', tickformat='$,.0f'),
+        ))
+        fig_hm.update_layout(
+            title='Ahorro Neto por Sede y Mes',
+            xaxis_title='Mes',
+            yaxis_title='',
+            template='plotly_dark',
+            height=max(420, len(pivot) * 22 + 100),
+        )
+        st.plotly_chart(fig_hm, use_container_width=True)
 
     with c2:
         ranking = por_sede.sort_values('ahorro_neto', ascending=True)
