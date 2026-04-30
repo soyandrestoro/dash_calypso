@@ -291,21 +291,21 @@ if len(filtrado) > 0:
     )
 
     COLORES_EPM = {
-        'Nivel 1 - Operador': '#f87171',
-        'Nivel 1 - Usuario':  '#fb923c',
-        'Nivel 2 - Usuario':  '#fcd34d',
+        'Nivel 1 - Operador': '#FFB627',
+        'Nivel 1 - Usuario':  '#FFC94D',
+        'Nivel 2 - Usuario':  '#FFD980',
     }
     COLORES_BIA = {
-        'Nivel 1 - Operador': '#93c5fd',
-        'Nivel 1 - Usuario':  '#6ee7b7',
-        'Nivel 2 - Usuario':  '#d8b4fe',
+        'Nivel 1 - Operador': '#09B4CC',
+        'Nivel 1 - Usuario':  '#2ECC71',
+        'Nivel 2 - Usuario':  '#7555F3',
     }
 
     fig_tarifas = go.Figure()
     for niv in sorted(tarifas_mes['nivel'].unique()):
         sub = tarifas_mes[tarifas_mes['nivel'] == niv]
-        c_epm = COLORES_EPM.get(niv, '#f87171')
-        c_bia = COLORES_BIA.get(niv, '#6ee7b7')
+        c_epm = COLORES_EPM.get(niv, '#FFB627')
+        c_bia = COLORES_BIA.get(niv, '#09B4CC')
         fig_tarifas.add_trace(go.Scatter(
             x=sub['mes'], y=sub['tarifa_epm'],
             mode='lines+markers',
@@ -339,16 +339,16 @@ if len(filtrado) > 0:
         ),
         xaxis=dict(
             title='', tickfont=dict(size=11),
-            showgrid=True, gridcolor='rgba(71,85,105,0.25)', gridwidth=1,
+            showgrid=True, gridcolor='rgba(140,155,176,0.12)', gridwidth=1,
             zeroline=False, showline=False,
         ),
         yaxis=dict(
             title='$/kWh', tickfont=dict(size=11), tickformat='$.3f',
-            showgrid=True, gridcolor='rgba(71,85,105,0.25)', gridwidth=1,
+            showgrid=True, gridcolor='rgba(140,155,176,0.12)', gridwidth=1,
             zeroline=False, showline=False,
         ),
         margin=dict(t=10, b=40, l=60, r=20),
-        hoverlabel=dict(bgcolor='#1e293b', bordercolor='#334155',
+        hoverlabel=dict(bgcolor='#101525', bordercolor='#1A2035',
                         font=dict(size=12)),
     )
     st.plotly_chart(fig_tarifas, use_container_width=True)
@@ -381,10 +381,10 @@ if len(filtrado) > 0:
         text=textos_wf,
         textposition='outside',
         textfont=dict(size=11),
-        connector=dict(line=dict(color='#475569', width=1)),
-        increasing=dict(marker=dict(color='#10b981')),
-        decreasing=dict(marker=dict(color='#94a3b8')),
-        totals=dict(marker=dict(color='#3b82f6')),
+        connector=dict(line=dict(color='#8C9BB0', width=1)),
+        increasing=dict(marker=dict(color='#2ECC71')),
+        decreasing=dict(marker=dict(color='#8C9BB0')),
+        totals=dict(marker=dict(color='#7555F3')),
     ))
     fig_wf.update_layout(
         title='Flujo de Ahorro Neto Mensual (Ahorro tarifa − Renting)',
@@ -434,7 +434,7 @@ if len(filtrado) > 0:
                 z=pivot.values,
                 x=list(pivot.columns),
                 y=[str(c) for c in pivot.index],
-                colorscale=[[0.0, '#f87171'], [0.5, '#334155'], [1.0, '#34d399']],
+                colorscale=[[0.0, '#FFB627'], [0.5, '#1A2035'], [1.0, '#2ECC71']],
                 zmid=0,
                 hoverongaps=False,
                 hovertemplate='<b>Cuenta %{y}</b><br>Mes: %{x}<br>Ahorro neto: $%{z:,.0f}<extra></extra>',
@@ -479,9 +479,9 @@ if len(filtrado) > 0:
         p_epm      = _pct(s_epm,     g_epm)
         p_bia_rent = _pct(s_bia_rent, g_bia_rent)
 
-        c_ahorro = '#10b981' if s_ahorro > 0 else '#94a3b8'
+        c_ahorro = '#2ECC71' if s_ahorro > 0 else '#8C9BB0'
         st.markdown(
-            f"<span style='color:#94a3b8;font-size:0.82em'>{niv_sede}</span>&nbsp;&nbsp;"
+            f"<span style='color:#8C9BB0;font-size:0.82em'>{niv_sede}</span>&nbsp;&nbsp;"
             f"<span style='color:{c_ahorro};font-weight:600'>Ahorro neto: ${s_ahorro:,.0f}</span>",
             unsafe_allow_html=True,
         )
@@ -500,12 +500,12 @@ if len(filtrado) > 0:
         # ── Barras de participación ──
         labels  = ['Consumo', 'Ahorro Neto', 'Costo EPM', 'BIA+Renting']
         vals    = [p_consumo, p_ahorro, p_epm, p_bia_rent]
-        colors  = ['#93c5fd', c_ahorro, '#f87171', '#6ee7b7']
+        colors  = ['#09B4CC', c_ahorro, '#FFB627', '#7555F3']
 
         fig_p = go.Figure()
         fig_p.add_trace(go.Bar(
             x=[100] * 4, y=labels, orientation='h',
-            marker_color='rgba(71,85,105,0.2)',
+            marker_color='rgba(140,155,176,0.1)',
             showlegend=False, hoverinfo='skip',
         ))
         fig_p.add_trace(go.Bar(
@@ -513,7 +513,7 @@ if len(filtrado) > 0:
             marker_color=colors,
             text=[f"{v:.1f}%" for v in vals],
             textposition='inside',
-            textfont=dict(size=12, color='#f8fafc'),
+            textfont=dict(size=12, color='#FFFFFF'),
             showlegend=False,
             hovertemplate='%{y}: %{x:.1f}% del total<extra></extra>',
         ))
@@ -533,8 +533,8 @@ if len(filtrado) > 0:
 
     with c1:
         fig = go.Figure([
-            go.Bar(x=por_mes['mes'], y=por_mes['costo_epm'], name='Costo EPM', marker_color='#ef4444'),
-            go.Bar(x=por_mes['mes'], y=por_mes['costo_bia'], name='Costo BIA', marker_color='#10b981'),
+            go.Bar(x=por_mes['mes'], y=por_mes['costo_epm'], name='Costo EPM', marker_color='#FFB627'),
+            go.Bar(x=por_mes['mes'], y=por_mes['costo_bia'], name='Costo BIA', marker_color='#2ECC71'),
         ])
         fig.update_layout(title="Costo Comparativo (EPM vs BIA)",
                           xaxis_title="Mes", yaxis_title="Costo ($)",
@@ -548,7 +548,7 @@ if len(filtrado) > 0:
             go.Scatter(
                 x=por_mes['mes'], y=por_mes['acumulado'],
                 mode='lines+markers', name='Acumulado Neto',
-                line=dict(color='#3b82f6', width=3), fill='tozeroy'
+                line=dict(color='#09B4CC', width=3), fill='tozeroy'
             )
         ])
         fig.update_layout(title="Acumulado Neto por Período",
@@ -585,7 +585,7 @@ st.markdown("---")
 n_cuentas   = df['cuenta'].nunique()
 n_registros = len(df)
 st.markdown(f"""
-<div style='text-align:center;color:#888;font-size:0.9em'>
+<div style='text-align:center;color:#8C9BB0;font-size:0.9em'>
     Dashboard Energético • Oct 2025 – Abr 2026 • {n_cuentas} Sedes • {n_registros} Registros
 </div>
 """, unsafe_allow_html=True)
