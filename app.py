@@ -384,21 +384,33 @@ if len(filtrado) > 0:
     c1, c2 = st.columns(2)
 
     with c1:
-        colores_scatter = ['#10b981' if v > 0 else '#94a3b8' for v in por_sede['ahorro_neto']]
-        fig_sc = go.Figure(go.Scatter(
-            x=por_sede['consumo'],
-            y=por_sede['ahorro_neto'],
-            mode='markers',
-            marker=dict(size=10, color=colores_scatter, line=dict(width=1, color='#1e293b')),
-            text=por_sede['cuenta'].astype(str) + '<br>' + por_sede['nivel'],
-            hovertemplate='<b>%{text}</b><br>Consumo: %{x:,.0f} kWh<br>Ahorro neto: $%{y:,.0f}<extra></extra>',
-        ))
+        fig_sc = go.Figure()
+        for niv in sorted(por_sede['nivel'].unique()):
+            sub = por_sede[por_sede['nivel'] == niv]
+            col_pts = ['#10b981' if v > 0 else '#94a3b8' for v in sub['ahorro_neto']]
+            fig_sc.add_trace(go.Scatter(
+                x=sub['consumo'],
+                y=sub['ahorro_neto'],
+                mode='markers+text',
+                name=niv,
+                marker=dict(size=11, color=col_pts, line=dict(width=1, color='#0f1419')),
+                text=sub['cuenta'].astype(str),
+                textposition='top center',
+                textfont=dict(size=9, color='#94a3b8'),
+                hovertemplate=(
+                    '<b>Cuenta %{text}</b><br>'
+                    'Consumo: %{x:,.0f} kWh<br>'
+                    'Ahorro neto: $%{y:,.0f}<extra></extra>'
+                ),
+            ))
         fig_sc.add_hline(y=0, line=dict(color='#475569', dash='dash', width=1))
         fig_sc.update_layout(
             title='Consumo vs Ahorro Neto por Sede',
             xaxis_title='Consumo total (kWh)',
             yaxis_title='Ahorro neto ($)',
-            template='plotly_dark', height=420,
+            template='plotly_dark',
+            height=480,
+            legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='left', x=0),
         )
         st.plotly_chart(fig_sc, use_container_width=True)
 
