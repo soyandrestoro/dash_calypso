@@ -155,7 +155,7 @@ if 'ultimo_nivel' not in st.session_state:
     st.session_state.ultimo_nivel = ""
 
 def reiniciar_filtros():
-    for key in ('busqueda_widget', 'nivel_widget', 'sede_widget', 'mes_widget'):
+    for key in ('busqueda_widget', 'nivel_widget', 'sede_widget', 'mes_widget', 'heatmap_sedes_widget'):
         if key in st.session_state:
             del st.session_state[key]
     st.session_state.ultimo_nivel = ""
@@ -394,7 +394,7 @@ if len(filtrado) > 0:
     )
     st.plotly_chart(fig_wf, use_container_width=True)
 
-    # ── 2. Scatter Consumo vs Ahorro por sede  +  3. Ranking de sedes ────────
+    # ── 2. Heatmap Sede × Mes  +  Participación de Sede ─────────────────────
     por_sede = (
         filtrado
         .groupby('cuenta', as_index=False)
@@ -405,35 +405,49 @@ if len(filtrado) > 0:
         )
     )
 
+    # Filtro de sedes para el heatmap (depende de filtros principales)
+    cuentas_disp_hm = sorted(filtrado['cuenta'].astype(str).unique().tolist())
+    sedes_hm = st.multiselect(
+        "Sedes en el mapa de calor",
+        options=cuentas_disp_hm,
+        default=[],
+        placeholder="Selecciona una o varias sedes para visualizar…",
+        key="heatmap_sedes_widget",
+    )
+
     c1, c2 = st.columns(2)
 
     with c1:
-        pivot = filtrado.pivot_table(
-            index='cuenta', columns='mes', values='ahorro_neto',
-            aggfunc='sum', fill_value=0,
-        )
-        cols_ord = [m for m in MESES_KEYS if m in pivot.columns]
-        pivot = pivot[cols_ord]
-        pivot = pivot.loc[pivot.sum(axis=1).sort_values(ascending=True).index]
+        if not sedes_hm:
+            st.info("Selecciona al menos una sede arriba para ver el mapa de calor.")
+        else:
+            df_hm = filtrado[filtrado['cuenta'].astype(str).isin(sedes_hm)]
+            pivot = df_hm.pivot_table(
+                index='cuenta', columns='mes', values='ahorro_neto',
+                aggfunc='sum', fill_value=0,
+            )
+            cols_ord = [m for m in MESES_KEYS if m in pivot.columns]
+            pivot = pivot[cols_ord]
+            pivot = pivot.loc[pivot.sum(axis=1).sort_values(ascending=True).index]
 
-        fig_hm = go.Figure(go.Heatmap(
-            z=pivot.values,
-            x=list(pivot.columns),
-            y=[str(c) for c in pivot.index],
-            colorscale=[[0.0, '#475569'], [0.5, '#94a3b8'], [1.0, '#10b981']],
-            zmid=0,
-            hoverongaps=False,
-            hovertemplate='<b>Cuenta %{y}</b><br>Mes: %{x}<br>Ahorro neto: $%{z:,.0f}<extra></extra>',
-            colorbar=dict(title='Ahorro ($)', tickformat='$,.0f'),
-        ))
-        fig_hm.update_layout(
-            title='Ahorro Neto por Sede y Mes',
-            xaxis_title='Mes',
-            yaxis_title='',
-            template='plotly_dark',
-            height=max(420, len(pivot) * 22 + 100),
-        )
-        st.plotly_chart(fig_hm, use_container_width=True)
+            fig_hm = go.Figure(go.Heatmap(
+                z=pivot.values,
+                x=list(pivot.columns),
+                y=[str(c) for c in pivot.index],
+                colorscale=[[0.0, '#475569'], [0.5, '#94a3b8'], [1.0, '#10b981']],
+                zmid=0,
+                hoverongaps=False,
+                hovertemplate='<b>Cuenta %{y}</b><br>Mes: %{x}<br>Ahorro neto: $%{z:,.0f}<extra></extra>',
+                colorbar=dict(title='Ahorro ($)', tickformat='$,.0f'),
+            ))
+            fig_hm.update_layout(
+                title='Ahorro Neto por Sede y Mes',
+                xaxis_title='Mes',
+                yaxis_title='',
+                template='plotly_dark',
+                height=max(300, len(pivot) * 40 + 100),
+            )
+            st.plotly_chart(fig_hm, use_container_width=True)
 
     with c2:
         st.markdown("**Participación de Sede**")
