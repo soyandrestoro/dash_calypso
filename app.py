@@ -472,10 +472,10 @@ if len(filtrado) > 0:
             s_op      = det['costo_op'].sum()
             s_bia     = det['costo_bia'].sum()
 
-            g_consumo = filtrado['consumo'].sum()
-            g_ahorro  = filtrado['ahorro'].sum()
-            g_op      = filtrado['costo_op'].sum()
-            g_bia     = filtrado['costo_bia'].sum()
+            g_consumo = df['consumo'].sum()
+            g_ahorro  = df['ahorro'].sum()
+            g_op      = df['costo_op'].sum()
+            g_bia     = df['costo_bia'].sum()
 
             def _pct(a, b): return round(a / b * 100, 1) if b else 0.0
 
