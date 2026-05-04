@@ -211,23 +211,48 @@ def reiniciar_filtros():
     st.session_state.ultimo_op    = ""
     st.session_state.ultimo_nivel = ""
 
+st.markdown("""
+<style>
+div[data-testid="stForm"], .filtros-box {
+    background: #0e1117;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 10px;
+    padding: 18px 20px 10px 20px;
+    margin-bottom: 16px;
+}
+div[data-baseweb="select"] > div {
+    background-color: #1c2333 !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 6px !important;
+}
+div[data-baseweb="input"] > div {
+    background-color: #1c2333 !important;
+    border: 1px solid rgba(255,255,255,0.2) !important;
+    border-radius: 6px !important;
+}
+</style>
+<div class="filtros-box">
+""", unsafe_allow_html=True)
+
 col_titulo, col_btn = st.columns([6, 1])
 with col_titulo:
-    st.markdown("### Filtros")
+    st.markdown("### 🔎 Filtros")
 with col_btn:
     st.markdown("<div style='padding-top:28px'>", unsafe_allow_html=True)
     st.button("✕ Limpiar", on_click=reiniciar_filtros, use_container_width=True)
     st.markdown("</div>", unsafe_allow_html=True)
 
-busqueda = st.text_input("🔍 Buscar por sede",
+busqueda = st.text_input("Buscar por sede",
                          placeholder="Ej: ENGATIVA", key="busqueda_widget")
 
 c1, c2, c3, c4 = st.columns(4)
 
+TODOS = "Todos"
+
 with c1:
-    operador = st.selectbox("Operador / Distribuidor",
-                            [""] + sorted(df['operador'].unique().tolist()),
-                            index=0, key="op_widget")
+    op_opts = [TODOS] + sorted(df['operador'].unique().tolist())
+    op_sel  = st.selectbox("Operador / Distribuidor", op_opts, index=0, key="op_widget")
+    operador = "" if op_sel == TODOS else op_sel
 
 # Reset cascada: operador → nivel
 if operador != st.session_state.ultimo_op:
@@ -240,9 +265,9 @@ if operador != st.session_state.ultimo_op:
 pool_op = df if not operador else df[df['operador'] == operador]
 
 with c2:
-    nivel = st.selectbox("Nivel de Tensión",
-                         [""] + sorted(pool_op['nivel'].unique().tolist()),
-                         index=0, key="nivel_widget")
+    niv_opts = [TODOS] + sorted(pool_op['nivel'].unique().tolist())
+    niv_sel  = st.selectbox("Nivel de Tensión", niv_opts, index=0, key="nivel_widget")
+    nivel    = "" if niv_sel == TODOS else niv_sel
 
 # Reset cascada: nivel → sede
 if nivel != st.session_state.ultimo_nivel:
@@ -250,16 +275,21 @@ if nivel != st.session_state.ultimo_nivel:
     if 'sede_widget' in st.session_state:
         del st.session_state['sede_widget']
 
-pool_niv = pool_op if not nivel else pool_op[pool_op['nivel'] == nivel]
-sedes_disp = [""] + sorted(pool_niv['sede'].astype(str).unique().tolist())
+pool_niv   = pool_op if not nivel else pool_op[pool_op['nivel'] == nivel]
+sedes_disp = [TODOS] + sorted(pool_niv['sede'].astype(str).unique().tolist())
 
 with c3:
-    sede = st.selectbox("Sede", sedes_disp, index=0, key="sede_widget")
+    sede_sel = st.selectbox("Sede", sedes_disp, index=0, key="sede_widget")
+    sede     = "" if sede_sel == TODOS else sede_sel
 
 with c4:
-    mes = st.selectbox("Mes", [""] + MESES_KEYS, index=0,
-                       format_func=lambda x: MESES_LABEL.get(x, x) if x else "",
-                       key="mes_widget")
+    mes_opts = [TODOS] + MESES_KEYS
+    mes_sel  = st.selectbox("Mes", mes_opts, index=0,
+                            format_func=lambda x: MESES_LABEL.get(x, x) if x != TODOS else TODOS,
+                            key="mes_widget")
+    mes = "" if mes_sel == TODOS else mes_sel
+
+st.markdown("</div>", unsafe_allow_html=True)
 
 # Aplicar filtros
 filtrado = df.copy()
