@@ -204,10 +204,14 @@ if 'ultimo_nivel' not in st.session_state:
     st.session_state.ultimo_nivel = ""
 
 def reiniciar_filtros():
-    for key in ('busqueda_widget', 'op_widget', 'nivel_widget', 'sede_widget',
-                'mes_widget', 'heatmap_sedes_widget', 'detalle_sedes_widget', 'ranking_sede_widget'):
-        if key in st.session_state:
-            del st.session_state[key]
+    st.session_state['busqueda_widget']       = ""
+    st.session_state['op_widget']             = "Todos"
+    st.session_state['nivel_widget']          = "Todos"
+    st.session_state['sede_widget']           = "Todos"
+    st.session_state['mes_widget']            = "Todos"
+    st.session_state['heatmap_sedes_widget']  = []
+    st.session_state['detalle_sedes_widget']  = []
+    st.session_state['ranking_sede_widget']   = "Todos"
     st.session_state.ultimo_op    = ""
     st.session_state.ultimo_nivel = ""
 
@@ -493,11 +497,11 @@ if len(filtrado) > 0:
         st.markdown("**Participación de Sede**")
         st.info("📊 **¿Qué mide este panel?** Muestra cuánto representa una sede dentro del **total de todas las sedes y operadores**. Los porcentajes no cambian con los filtros — siempre reflejan el peso real de esa sede en el universo completo.")
         ranking = por_sede.sort_values('ahorro', ascending=False)
-        sede_opts = [""] + ranking['sede'].astype(str).tolist()
+        sede_opts = ["Todos"] + ranking['sede'].astype(str).tolist()
         sede_sel = st.selectbox("Selecciona una sede", sede_opts, index=0,
                                 key="ranking_sede_widget")
 
-        if not sede_sel:
+        if sede_sel == "Todos":
             st.info("Selecciona una sede para ver su participación en el resultado global.")
         else:
             det = filtrado[filtrado['sede'].astype(str) == sede_sel]
