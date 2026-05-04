@@ -415,6 +415,11 @@ if len(filtrado) > 0:
              operador=('operador', 'first'), nivel=('nivel', 'first'))
     )
 
+    st.info("🗺️ **Mapa de calor:** Cada celda muestra el ahorro de una sede en un mes. "
+            "**Verde** = BIA es más barato que el distribuidor. "
+            "**Rojo** = el distribuidor resultó más barato ese mes. "
+            "Selecciona las sedes que quieres comparar.")
+
     sedes_disp_hm = sorted(filtrado['sede'].astype(str).unique().tolist())
     sedes_hm = st.multiselect(
         "Sedes en el mapa de calor",
