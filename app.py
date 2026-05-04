@@ -456,6 +456,7 @@ if len(filtrado) > 0:
 
     with c2:
         st.markdown("**Participación de Sede**")
+        st.caption("¿Cuánto pesa esta sede dentro del total de todas las sedes? Los porcentajes se calculan siempre sobre el universo completo, independientemente de los filtros activos.")
         ranking = por_sede.sort_values('ahorro', ascending=False)
         sede_opts = [""] + ranking['sede'].astype(str).tolist()
         sede_sel = st.selectbox("Selecciona una sede", sede_opts, index=0,
