@@ -12,7 +12,7 @@ st.set_page_config(
 
 # ── Constantes ────────────────────────────────────────────────────────────────
 
-MESES_COLS = ['nov-25', 'dic-25', 'ene-26', 'feb-26', 'mar-26', 'abr-26']
+MESES_COLS = ['nov-2025', 'dic-2025', 'ene-2026', 'feb-2026', 'mar-2026', 'abr-2026']
 MESES_KEYS = ['2025-11', '2025-12', '2026-01', '2026-02', '2026-03', '2026-04']
 MESES_LABEL = {
     '2025-11': 'Noviembre',
@@ -37,25 +37,27 @@ OPERADORES = {
     'Aire':         'Tarifas Calypso - Completo.xlsx - Aire Tarifas.csv',
     'Celsia':       'Tarifas Calypso - Completo.xlsx - Celsia Tarifas.csv',
     'Cens':         'Tarifas Calypso - Completo.xlsx - Cens Tarifas.csv',
+    'Chec':         'Tarifas Calypso - Completo.xlsx - Chec Tarifas.csv',
     'Electrohuila': 'Tarifas Calypso - Completo.xlsx - Electrohuila Tarifas.csv',
     'Enel':         'Tarifas Calypso - Completo.xlsx - Enel Tarifas.csv',
     'Epm':          'Tarifas Calypso - Completo.xlsx - Epm Tarifas.csv',
     'Neu':          'Tarifas Calypso - Completo.xlsx - Neu Tarifas.csv',
-    'Qi energy':    'Tarifas Calypso - Completo.xlsx - Qi Energy Tarifas.csv',
+    'Qi Energy':    'Tarifas Calypso - Completo.xlsx - Qi Energy Tarifas.csv',
     'Vatia':        'Tarifas Calypso - Completo.xlsx - Vatia Tarifas .csv',
 }
 
 CONSUMOS_FILES = {
-    'Afinia':       'Fronteras_Calypso_Consumos- Completo.xlsx - Afinia (1).csv',
-    'Aire':         'Fronteras_Calypso_Consumos- Completo.xlsx - Aire.csv',
-    'Celsia':       'Fronteras_Calypso_Consumos- Completo.xlsx - Celsia.csv',
-    'Cens':         'Fronteras_Calypso_Consumos- Completo.xlsx - Cens.csv',
-    'Electrohuila': 'Fronteras_Calypso_Consumos- Completo.xlsx - Electrohuila.csv',
-    'Enel':         'Fronteras_Calypso_Consumos- Completo.xlsx - Enel.csv',
-    'Epm':          'Fronteras_Calypso_Consumos- Completo.xlsx - Epm.csv',
-    'Neu':          'Fronteras_Calypso_Consumos- Completo.xlsx - Neu.csv',
-    'Qi energy':    'Fronteras_Calypso_Consumos- Completo.xlsx - Qi energy.csv',
-    'Vatia':        'Fronteras_Calypso_Consumos- Completo.xlsx - Vatia.csv',
+    'Afinia':       'Fronterias Calypso Act - Afinia.csv',
+    'Aire':         'Fronterias Calypso Act - Aire.csv',
+    'Celsia':       'Fronterias Calypso Act - Celsia.csv',
+    'Cens':         'Fronterias Calypso Act - Cens.csv',
+    'Chec':         'Fronterias Calypso Act - Chec.csv',
+    'Electrohuila': 'Fronterias Calypso Act - Electrohuila.csv',
+    'Enel':         'Fronterias Calypso Act - Enel.csv',
+    'Epm':          'Fronterias Calypso Act - Epm.csv',
+    'Neu':          'Fronterias Calypso Act - Neu.csv',
+    'Qi Energy':    'Fronterias Calypso Act - Qi Energy.csv',
+    'Vatia':        'Fronterias Calypso Act - Vatia.csv',
 }
 
 TODOS_ARCHIVOS = list(CONSUMOS_FILES.values()) + list(OPERADORES.values())
@@ -121,60 +123,59 @@ def cargar_datos(mtimes):
     registros = []
     for op, fname in CONSUMOS_FILES.items():
         try:
-            raw = pd.read_csv(fname, header=None, dtype=str)
+            df_raw = pd.read_csv(fname, dtype=str, encoding='latin1')
         except FileNotFoundError:
             continue
 
-        header_rows = raw[raw.iloc[:, 0].str.strip().str.lower() == 'sede'].index.tolist()
+        df_raw.columns = [c.strip() for c in df_raw.columns]
+        df_raw = df_raw.dropna(subset=[df_raw.columns[0]])
+        df_raw = df_raw[df_raw.iloc[:, 0].str.strip() != '']
 
-        for i, h_idx in enumerate(header_rows):
-            next_h = header_rows[i + 1] if i + 1 < len(header_rows) else len(raw)
-            bloque = raw.iloc[h_idx + 1: next_h].copy()
-            bloque.columns = [c.strip() for c in raw.iloc[h_idx].tolist()]
-            bloque = bloque.dropna(subset=['Sede'])
-            bloque = bloque[bloque['Sede'].str.strip() != '']
+        # Columna de sede siempre es la primera
+        col_sede = df_raw.columns[0]
+        # Nivel en tarifa: los nuevos archivos tienen "1" → usar "1 Usuario"
+        nivel_tarifa = '1 Usuario'
 
-            col_nivel = 'Nivel de tension'
+        for _, row in df_raw.iterrows():
+            sede = str(row[col_sede]).strip()
 
-            for _, row in bloque.iterrows():
-                sede  = str(row['Sede']).strip()
-                nivel = str(row[col_nivel]).strip()
+            for mes_col, mes_key in zip(MESES_COLS, MESES_KEYS):
+                if mes_col not in df_raw.columns:
+                    continue
+                try:
+                    consumo = float(str(row[mes_col]).strip().replace(',', '.'))
+                except (ValueError, AttributeError):
+                    consumo = 0.0
+                if consumo <= 0:
+                    continue
 
-                for mes_col, mes_key in zip(MESES_COLS, MESES_KEYS):
-                    if mes_col not in bloque.columns:
-                        continue
-                    consumo = limpiar_num_es(row[mes_col])
-                    if consumo <= 0:
-                        continue
+                mes_tarifa = MESES_TARIFA[mes_key]
+                t = tarifas.get((op, nivel_tarifa, mes_tarifa))
+                if t is None:
+                    for k in tarifas:
+                        if k[0] == op and k[1].strip() == nivel_tarifa and k[2] == mes_tarifa:
+                            t = tarifas[k]
+                            break
+                if t is None:
+                    continue
 
-                    mes_tarifa = MESES_TARIFA[mes_key]
-                    t = tarifas.get((op, nivel, mes_tarifa))
-                    if t is None:
-                        # Intentar con nivel sin espacios extra
-                        for k in tarifas:
-                            if k[0] == op and k[1].strip() == nivel and k[2] == mes_tarifa:
-                                t = tarifas[k]
-                                break
-                    if t is None:
-                        continue
+                tarifa_op, tarifa_bia = t
+                costo_op  = consumo * tarifa_op
+                costo_bia = consumo * tarifa_bia
+                ahorro    = costo_op - costo_bia
 
-                    tarifa_op, tarifa_bia = t
-                    costo_op  = consumo * tarifa_op
-                    costo_bia = consumo * tarifa_bia
-                    ahorro    = costo_op - costo_bia
-
-                    registros.append({
-                        'sede':       sede,
-                        'operador':   op,
-                        'nivel':      nivel,
-                        'mes':        mes_key,
-                        'consumo':    consumo,
-                        'tarifa_op':  tarifa_op,
-                        'tarifa_bia': tarifa_bia,
-                        'costo_op':   costo_op,
-                        'costo_bia':  costo_bia,
-                        'ahorro':     ahorro,
-                    })
+                registros.append({
+                    'sede':       sede,
+                    'operador':   op,
+                    'nivel':      nivel_tarifa,
+                    'mes':        mes_key,
+                    'consumo':    consumo,
+                    'tarifa_op':  tarifa_op,
+                    'tarifa_bia': tarifa_bia,
+                    'costo_op':   costo_op,
+                    'costo_bia':  costo_bia,
+                    'ahorro':     ahorro,
+                })
 
     return pd.DataFrame(registros)
 
