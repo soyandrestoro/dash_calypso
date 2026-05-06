@@ -197,6 +197,60 @@ else:
 
 st.markdown("---")
 
+# ── Instructivo ───────────────────────────────────────────────────────────────
+
+with st.expander("📖 ¿Cómo usar este dashboard?", expanded=False):
+    st.markdown("""
+### Bienvenido al Dashboard Energético de Calypso
+
+Este dashboard compara el **costo de energía con el distribuidor actual** frente al **costo con BIA**,
+para cada sede y cada mes del período **noviembre 2025 – abril 2026**.
+
+---
+
+#### 1️⃣ Usa los filtros para explorar los datos
+
+En la sección **Filtros** puedes combinar:
+- **Operador / Distribuidor** → filtra por la empresa que suministra la energía en esa zona (Enel, Epm, Neu, etc.)
+- **Nivel de Tensión** → nivel eléctrico del suministro
+- **Sede** → una ubicación específica de Calypso
+- **Mes** → un mes en particular del período
+
+> Todos los filtros están en **"Todos"** por defecto, mostrando el universo completo.
+> Usa el botón **✕ Limpiar** para volver al estado inicial.
+
+---
+
+#### 2️⃣ Lee el Resumen
+
+Las 4 tarjetas principales muestran, para los datos filtrados:
+
+| Tarjeta | ¿Qué significa? |
+|---|---|
+| **Consumo** | Total de energía consumida en kWh |
+| **Costo con Distribuidor** | Lo que costaría pagar con la tarifa del distribuidor actual |
+| **Costo con BIA** | Lo que costaría pagar con la tarifa BIA |
+| **Ahorro vs Distribuidor** | Diferencia: verde = BIA es más barato, rojo = distribuidor es más barato |
+
+---
+
+#### 3️⃣ Interpreta las gráficas
+
+- **Tarifas ($/kWh)**: Evolución mes a mes del precio del kWh — línea sólida = distribuidor, línea punteada = BIA
+- **Ahorro Mensual**: Cuánto se ahorra (o se pierde) cada mes con BIA vs el distribuidor
+- **Mapa de calor**: Selecciona varias sedes para ver su ahorro mes a mes — verde = ahorro, rojo = no conviene BIA ese mes
+- **Participación de sede**: Escoge una sede para ver qué porcentaje representa dentro del total global
+- **Costo Comparativo**: Barras lado a lado comparando el gasto total mensual
+- **Ahorro Acumulado**: Cuánto se ha ahorrado en total a lo largo del período
+
+---
+
+#### 4️⃣ Descarga los datos
+
+Al final del dashboard hay una tabla detallada con todos los registros.
+Usa el botón **📥 Descargar como CSV** para exportarla a Excel.
+""")
+
 # ── Filtros ───────────────────────────────────────────────────────────────────
 
 if 'ultimo_op' not in st.session_state:
